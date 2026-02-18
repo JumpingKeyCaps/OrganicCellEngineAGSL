@@ -1,0 +1,80 @@
+// --- TWEAKABLE PARAMETERS ---
+// 1. Geometry & Motion
+const float CELL_DENSITY    = 18.0;
+const float FLOW_SPEED      = 0.8;
+
+// 2. Interaction
+const float TOUCH_RADIUS    = 0.35;
+const float REPEL_STRENGTH  = 1.05;
+
+// 3. Visual Styling (The "Look")
+const float CELL_SHARPNESS  = 0.01;  // Plus c'est bas, plus les bords sont nets
+const float EDGE_GLOW      = 0.0; // Intensité du petit éclat sur les bords
+const float CONTRAST_BOOST  = 1.0;  // Puissance du contraste des cellules
+
+// --- UNIFORMS ---
+uniform float uTime;
+uniform float uProgress;
+uniform float2 iResolution;
+uniform float2 uTouch;
+
+float2 hash2(float2 p) {
+    return fract(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)))) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution.y;
+    float2 touch = uTouch / iResolution.y;
+
+    float2 st = uv * CELL_DENSITY;
+    float2 g = floor(st);
+    float2 f = fract(st);
+
+    float res = 1.0;
+
+    // Recherche 5x5 pour la stabilité du touch
+    for(int y=-2; y<=2; y++) {
+        for(int x=-2; x<=2; x++) {
+            float2 neighbor = float2(float(x), float(y));
+            float2 seed = hash2(g + neighbor);
+
+            float2 point = 0.5 + 0.5 * sin(uTime * FLOW_SPEED + seed * 6.2831);
+
+            float2 cellWorldPos = (g + neighbor + point) / CELL_DENSITY;
+            float2 diffToTouch = cellWorldPos - touch;
+            float dist = length(diffToTouch);
+
+            if (dist < TOUCH_RADIUS) {
+                float force = pow(1.0 - dist / TOUCH_RADIUS, 2.0);
+                point += normalize(diffToTouch) * force * REPEL_STRENGTH;
+            }
+
+            float2 diff = neighbor + point - f;
+            res = min(res, dot(diff, diff));
+        }
+    }
+
+    float pattern = sqrt(res);
+
+    // --- LOGIQUE DE STYLE PARAMÉTRABLE ---
+    // On creuse le relief avec une courbe exponentielle
+    pattern = pow(pattern, CONTRAST_BOOST);
+
+    // Calcul de l'éclat sur les membranes (Fresnel-like)
+    float edge = smoothstep(CELL_SHARPNESS, CELL_SHARPNESS + 0.15, pattern)
+               - smoothstep(CELL_SHARPNESS + 0.15, CELL_SHARPNESS + 0.4, pattern);
+
+    // Application du look final
+    pattern = smoothstep(CELL_SHARPNESS, 0.9, pattern) - (edge * EDGE_GLOW);
+
+    // --- PALETTES ---
+    half3 colOk    = mix(half3(0.0, 0.8, 0.4), half3(0.0, 0.05, 0.02), pattern);
+    half3 colLoad  = mix(half3(1.0, 0.7, 0.1), half3(0.15, 0.08, 0.0), pattern);
+    half3 colError = mix(half3(1.0, 0.1, 0.5), half3(0.1, 0.0, 0.1), pattern);
+
+    half3 finalColor = (uProgress < 0.5)
+        ? mix(colOk, colLoad, uProgress * 2.0)
+        : mix(colLoad, colError, (uProgress - 0.5) * 2.0);
+
+    return half4(finalColor, 1.0);
+}
