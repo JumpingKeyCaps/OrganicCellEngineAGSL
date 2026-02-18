@@ -14,6 +14,10 @@ This project showcases a high-performance, interactive background engine for Jet
 |:---:|:---:|:---:|
 | ![P1](screenshots/classic.gif) | ![P2](screenshots/classic2.gif) |  ![P3](screenshots/advanced.gif) |
 
+| Interactive Organic Cell Shader | Alt Interactive Organic Cell Shader | Advanced "Frost" Interactive Cell Shader | 
+|:---:|:---:|:---:|
+| ![P1](screenshots/interactive1.gif) | ![P2](screenshots/interactive2.gif) |  ![P3](screenshots/interactiveadvanced.gif) |
+
 
 ---
 
