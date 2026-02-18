@@ -1,0 +1,65 @@
+// --- CONFIGURATION DEEP CELLS ---
+const float CELL_DENSITY = 4.5;
+const float FLOW_SPEED   = 0.5;
+const float DETAIL_LAYER = 0.8; // Intensité de la 2ème couche
+
+const half3 COLOR_OK_DARK    = half3(0.01, 0.05, 0.12);
+const half3 COLOR_OK_LIGHT   = half3(0.05, 0.35, 0.55);
+
+const half3 COLOR_LOAD_DARK  = half3(0.12, 0.03, 0.25);
+const half3 COLOR_LOAD_LIGHT = half3(0.6, 0.25, 0.85);
+
+const half3 COLOR_ERR_DARK   = half3(0.25, 0.02, 0.05);
+const half3 COLOR_ERR_LIGHT  = half3(0.95, 0.2, 0.15);
+// -------------------------------------------
+
+uniform float uTime;
+uniform float uProgress;
+uniform float2 iResolution;
+
+float2 hash2(float2 p) {
+    return fract(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)))) * 43758.5453);
+}
+
+// Fonction Voronoi réutilisable
+float voronoi(float2 uv, float speed) {
+    float2 g = floor(uv);
+    float2 f = fract(uv);
+    float res = 1.0;
+    for(int y=-1; y<=1; y++) {
+        for(int x=-1; x<=1; x++) {
+            float2 neighbor = float2(float(x), float(y));
+            float2 point = hash2(g + neighbor);
+            point = 0.5 + 0.5 * sin(uTime * speed + point * 6.2831);
+            float2 diff = neighbor + point - f;
+            res = min(res, dot(diff, diff));
+        }
+    }
+    return sqrt(res);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution.y;
+
+    // Couche principale
+    float p1 = voronoi(uv * CELL_DENSITY, FLOW_SPEED);
+
+    // Couche de détail (plus petite, sens inverse)
+    float p2 = voronoi(uv * (CELL_DENSITY * 2.0), -FLOW_SPEED * 0.5);
+
+    // Fusion organique
+    float pattern = smoothstep(0.0, 1.2, p1 + p2 * DETAIL_LAYER);
+
+    half3 colOk    = mix(COLOR_OK_LIGHT, COLOR_OK_DARK, pattern);
+    half3 colLoad  = mix(COLOR_LOAD_LIGHT, COLOR_LOAD_DARK, pattern);
+    half3 colError = mix(COLOR_ERR_LIGHT, COLOR_ERR_DARK, pattern);
+
+    half3 finalColor = (uProgress < 0.5)
+        ? mix(colOk, colLoad, uProgress * 2.0)
+        : mix(colLoad, colError, (uProgress - 0.5) * 2.0);
+
+    // Un léger vignetage pour "asseoir" le tout
+    float vignette = smoothstep(1.8, 0.5, length((fragCoord/iResolution.xy) - 0.5) * 2.0);
+
+    return half4(finalColor * vignette, 1.0);
+}
