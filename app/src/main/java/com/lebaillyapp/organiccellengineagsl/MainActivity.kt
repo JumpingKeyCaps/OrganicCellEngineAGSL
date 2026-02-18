@@ -4,13 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.Box
+import com.lebaillyapp.organiccellengineagsl.ui.screen.ClassicShaderScreen
+import com.lebaillyapp.organiccellengineagsl.ui.screen.InteractiveShaderScreen
 import com.lebaillyapp.organiccellengineagsl.ui.theme.OrganicCellEngineAGSLTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,29 +15,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OrganicCellEngineAGSLTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Box {
+                    //todo -  1. Classic shader visualiser (non-interactive)
+            //        ClassicShaderScreen(R.raw.organic_cells_shader)
+                    //todo -  2. Classic shader with 2 layer visualiser (non-interactive)
+            //        ClassicShaderScreen(R.raw.organic_cells_shader_layers)
+                    //todo -  3. Interactive shader visualiser (interactive)
+                    InteractiveShaderScreen(shaderRawId = R.raw.deep_cells_touch)
+
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    OrganicCellEngineAGSLTheme {
-        Greeting("Android")
     }
 }
