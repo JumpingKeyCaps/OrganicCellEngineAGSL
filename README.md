@@ -8,6 +8,15 @@
 
 This project showcases a high-performance, interactive background engine for Jetpack Compose, leveraging AGSL (Android Graphics Shading Language). It moves away from classic linear gradients and predictable sine-waves to implement a living, breathing organic environment based on Dynamic Voronoi Tesselation.
 
+--
+
+| Classic Organic Cell Shader | Alt Organic Cell Shader | Advanced Organic Cell layers Shader | 
+|:---:|:---:|:---:|
+| ![P1](screenshots/classic.gif) | ![P2](screenshots/classic2.gif) |  ![P3](screenshots/advanced.gif) |
+
+
+---
+
 ## The Concept: Living Geometry
 
 ### What is Voronoi?
