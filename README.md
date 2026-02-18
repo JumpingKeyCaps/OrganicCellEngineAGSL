@@ -54,6 +54,21 @@ The transition uses a non-linear smoothstep interpolation to ensure that state c
 * Half-Precision Floating Point: Specifically tuned for ARM architectures to maximize battery life while maintaining visual fidelity.
 * Aspect-Ratio Correction: Integrated normalization logic ensures that cells remain perfectly organic on any form factor, from Foldables to Tablets.
 
+### The "Black Hole" Challenge: Neighborhood Integrity
+
+A common pitfall in dynamic Voronoi implementations is the **Neighborhood Rupture**, often manifesting as "Black Holes" (dead pixels) during intense interaction.
+
+**The Problem:** Standard Voronoi shaders optimize performance by checking only the 9 immediate neighbor cells (3x3 grid) for each pixel. 
+
+When a strong interaction force (`REPEL_STRENGTH`) is applied, a cell nucleus can be pushed so far that it exits the search perimeter of the surrounding pixels.
+The pixel then loses its "closest seed" reference, resulting in a mathematical void—a black spot on the screen where the distance calculation fails.
+
+**The Solution:** To maintain topological integrity even under extreme distortion, this engine implements an **Extended 5x5 Search Grid**:
+
+* **Expanded Horizon:** By calculating 25 neighboring points instead of 9, the engine keeps track of "displaced" nuclei that have been propelled by the user's touch.
+* **Vector Repulsion:** We use a repulsion vector that displaces the cell's seed within the grid, ensuring that while the cell's *shape* is deformed, its *identity* remains within a detectable range for the GPU.
+* **Glitch-Free Fluidity:** This architectural choice ensures a "bulletproof" interaction, allowing for high `CELL_DENSITY` or wide `TOUCH_RADIUS` without ever breaking the visual continuity of the organic matter.
+
 ---
 
 ## Configuration
