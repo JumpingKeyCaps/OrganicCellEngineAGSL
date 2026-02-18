@@ -1,0 +1,88 @@
+// --- TWEAKABLE PARAMETERS ---
+const float CELL_DENSITY    = 5.0;  // Couche principale plus large
+const float DETAIL_DENSITY  = 25.0;  // Couche de fond très fine
+const float FLOW_SPEED      = 0.5;
+
+const float TOUCH_RADIUS    = 0.25;
+const float REPEL_STRENGTH  = 0.60;
+
+const float CELL_SHARPNESS  = 0.15;
+const float EDGE_GLOW       = 0.0;
+
+// --- UNIFORMS ---
+uniform float uTime;
+uniform float uProgress;
+uniform float2 iResolution;
+uniform float2 uTouch;
+
+float2 hash2(float2 p) {
+    return fract(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)))) * 43758.5453);
+}
+
+// Calcule une couche de membrane nette
+float getCellLayer(float2 uv, float2 touch, float density, float speed, float offset) {
+    float2 st = uv * density;
+    float2 g = floor(st);
+    float2 f = fract(st);
+    float res = 1.0;
+
+    for(int y=-2; y<=2; y++) {
+        for(int x=-2; x<=2; x++) {
+            float2 neighbor = float2(float(x), float(y));
+            float2 seed = hash2(g + neighbor);
+            // On ajoute l'offset pour que les couches ne bougent pas de façon identique
+            float2 point = 0.5 + 0.5 * sin(uTime * speed + seed * 6.2831 + offset);
+
+            float2 cellWorldPos = (g + neighbor + point) / density;
+            float dist = length(cellWorldPos - touch);
+
+            if (dist < TOUCH_RADIUS) {
+                float force = pow(1.0 - dist / TOUCH_RADIUS, 2.0);
+                point += normalize(cellWorldPos - touch) * force * REPEL_STRENGTH;
+            }
+
+            float2 diff = neighbor + point - f;
+            res = min(res, dot(diff, diff));
+        }
+    }
+
+    // On définit la membrane ici pour cette couche précise
+    float val = sqrt(res);
+    return smoothstep(CELL_SHARPNESS, 1.0, val);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution.y;
+    float2 touch = uTouch / iResolution.y;
+
+    // Layer 1 : Les grosses cellules de devant
+    float layer1 = getCellLayer(uv, touch, CELL_DENSITY, FLOW_SPEED, 0.0);
+
+    // Layer 2 : Les micro-cellules en arrière plan (vitesse différente)
+    float layer2 = getCellLayer(uv, touch, DETAIL_DENSITY, -FLOW_SPEED * 0.7, 10.0);
+
+    // Fusion des calques : Layer 1 multiplie Layer 2
+    // Ça donne l'impression que Layer 2 est DANS ou DERRIÈRE les cellules de Layer 1
+    float pattern = mix(layer2, layer1, 0.6);
+
+    // Effet de relief final
+    float edge = smoothstep(0.1, 0.2, pattern) - smoothstep(0.2, 0.4, pattern);
+    pattern = pattern - (edge * EDGE_GLOW);
+
+   // Palettes d'états - "Mineral & Aurora" Edition
+
+   // Idle: Ice Blue & Deep Navy (Froid, cristallin, élégant)
+   half3 colOk    = mix(half3(0.5, 0.85, 1.0), half3(0.02, 0.05, 0.15), pattern);
+
+   // Loading: Electric Cyan & Deep Violet (Phénomène énergétique)
+   half3 colLoad  = mix(half3(0.2, 1.0, 0.9), half3(0.1, 0.02, 0.25), pattern);
+
+   // Error: Burnt Orange & Volcanic Ash (Chaleur intense, danger)
+   half3 colError = mix(half3(1.0, 0.45, 0.1), half3(0.15, 0.02, 0.02), pattern);
+
+    half3 finalColor = (uProgress < 0.5)
+        ? mix(colOk, colLoad, uProgress * 2.0)
+        : mix(colLoad, colError, (uProgress - 0.5) * 2.0);
+
+    return half4(finalColor, 1.0);
+}
