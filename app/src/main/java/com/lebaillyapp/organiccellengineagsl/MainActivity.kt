@@ -21,7 +21,9 @@ class MainActivity : ComponentActivity() {
                     //todo -  2. Classic shader with 2 layer visualiser (non-interactive)
             //        ClassicShaderScreen(R.raw.organic_cells_shader_layers)
                     //todo -  3. Interactive shader visualiser (interactive)
-                    InteractiveShaderScreen(shaderRawId = R.raw.deep_cells_touch)
+            //        InteractiveShaderScreen(shaderRawId = R.raw.deep_cells_touch)
+                    //todo -  4. Interactive shader advanced layer (interactive)
+                    InteractiveShaderScreen(shaderRawId = R.raw.deep_cells_touch_advanced)
 
                 }
             }
