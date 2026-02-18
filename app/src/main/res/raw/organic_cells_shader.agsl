@@ -1,0 +1,52 @@
+// --- CONFIGURATION SOFT CELLS ---
+const float CELL_DENSITY = 25.0;
+const float FLOW_SPEED   = 0.4;
+
+const half3 COLOR_OK_DARK    = half3(0.02, 0.1, 0.2);
+const half3 COLOR_OK_LIGHT   = half3(0.1, 0.5, 0.7);
+
+const half3 COLOR_LOAD_DARK  = half3(0.15, 0.05, 0.3);
+const half3 COLOR_LOAD_LIGHT = half3(0.7, 0.3, 0.9);
+
+const half3 COLOR_ERR_DARK   = half3(0.3, 0.0, 0.05);
+const half3 COLOR_ERR_LIGHT  = half3(1.0, 0.3, 0.2);
+// -------------------------------------------
+
+uniform float uTime;
+uniform float uProgress;
+uniform float2 iResolution;
+
+// Petit générateur d'aléa pour AGSL
+float2 hash2(float2 p) {
+    return fract(sin(float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)))) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / iResolution.y;
+    float2 g = floor(uv * CELL_DENSITY);
+    float2 f = fract(uv * CELL_DENSITY);
+
+    float minDist = 1.0;
+    for(int y=-1; y<=1; y++) {
+        for(int x=-1; x<=1; x++) {
+            float2 neighbor = float2(float(x), float(y));
+            float2 point = hash2(g + neighbor);
+            // Animation des points de contrôle
+            point = 0.5 + 0.5 * sin(uTime * FLOW_SPEED + point * 6.2831);
+            float2 diff = neighbor + point - f;
+            minDist = min(minDist, dot(diff, diff));
+        }
+    }
+
+    float pattern = smoothstep(0.0, 1.1, sqrt(minDist));
+
+    half3 colOk    = mix(COLOR_OK_LIGHT, COLOR_OK_DARK, pattern);
+    half3 colLoad  = mix(COLOR_LOAD_LIGHT, COLOR_LOAD_DARK, pattern);
+    half3 colError = mix(COLOR_ERR_LIGHT, COLOR_ERR_DARK, pattern);
+
+    half3 finalColor = (uProgress < 0.5)
+        ? mix(colOk, colLoad, uProgress * 2.0)
+        : mix(colLoad, colError, (uProgress - 0.5) * 2.0);
+
+    return half4(finalColor, 1.0);
+}
